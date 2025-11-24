@@ -7,25 +7,29 @@ const app = express();
 const PORT = 3000;
 
 // Middleware
-app.use(cors({
-  origin: "http://localhost:5173", // Vite default port
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: "http://localhost:5173", // Vite default port
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 // Session configuration
-app.use(session({
-  secret: "fleures-monde-secret-key-2025",
-  resave: false,
-  saveUninitialized: false,
-  cookie: {
-    secure: false, // Set to true in production with HTTPS
-    httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
-  }
-}));
+app.use(
+  session({
+    secret: "fleures-monde-secret-key-2025",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: false, // Set to true in production with HTTPS
+      httpOnly: true,
+      maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    },
+  })
+);
 
 // Database
 const db = require("./models");
@@ -34,10 +38,11 @@ const seedDatabase = require("./utils/seed");
 // Sync database
 // force: false => Don't drop existing tables
 // force: true => Drop and recreate tables (use only in development!)
-db.sequelize.sync({ force: false })
+db.sequelize
+  .sync({ force: false })
   .then(async () => {
     console.log("✓ Database synchronized successfully");
-    
+
     // Seed the database with test data
     await seedDatabase();
   })
@@ -48,7 +53,7 @@ db.sequelize.sync({ force: false })
 // Routes
 require("./routes/bouquet.routes")(app);
 require("./routes/fleur.routes")(app);
-
+require("./routes/backoffice.routes")(app);
 // Simple test route
 app.get("/", (req, res) => {
   res.json({ message: "Bienvenue sur l'API Fleurs Monde!" });
@@ -59,9 +64,9 @@ app.post("/like", async (req, res) => {
   try {
     const id = parseInt(req.query.id);
     const Bouquet = db.bouquets;
-    
+
     const bouquet = await Bouquet.findByPk(id);
-    
+
     if (bouquet) {
       bouquet.totalLikes++;
       await bouquet.save();
@@ -71,7 +76,7 @@ app.post("/like", async (req, res) => {
         descr: bouquet.description,
         image: bouquet.image,
         prix: bouquet.prix,
-        likes: bouquet.totalLikes
+        likes: bouquet.totalLikes,
       });
     } else {
       res.status(404).json({ message: "Bouquet non trouvé" });
@@ -89,7 +94,9 @@ app.use((req, res, next) => {
 });
 
 setInterval(() => {
-  console.log(`Requêtes reçues dans les 10 dernières secondes: ${requestCount}`);
+  console.log(
+    `Requêtes reçues dans les 10 dernières secondes: ${requestCount}`
+  );
   requestCount = 0;
 }, 10000);
 
