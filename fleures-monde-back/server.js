@@ -98,7 +98,7 @@ setInterval(() => {
     `Requêtes reçues dans les 10 dernières secondes: ${requestCount}`
   );
   requestCount = 0;
-}, 10000);
+}, 60000);
 
 // Start server
 app.listen(PORT, () => {

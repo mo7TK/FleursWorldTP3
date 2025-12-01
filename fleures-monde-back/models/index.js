@@ -6,14 +6,13 @@ const sequelize = new Sequelize(dbConfig.DB, dbConfig.USER, dbConfig.PASSWORD, {
   host: dbConfig.HOST,
   dialect: dbConfig.dialect,
   storage: dbConfig.storage,
-  operatorsAliases: false,
   pool: {
     max: dbConfig.pool.max,
     min: dbConfig.pool.min,
     acquire: dbConfig.pool.acquire,
     idle: dbConfig.pool.idle
   },
-  logging: false // Set to console.log to see SQL queries
+  logging: false
 });
 
 const db = {};
@@ -26,42 +25,10 @@ db.fleurs = require("./fleur.model.js")(sequelize, Sequelize);
 db.bouquets = require("./bouquet.model.js")(sequelize, Sequelize);
 db.users = require("./user.model.js")(sequelize, Sequelize);
 
-// Define associations
+// Define junction table models BEFORE associations
 
-// 1. Bouquet-Fleur: Many-to-Many (with quantity)
-// A bouquet contains many flowers, and a flower can be in many bouquets
-db.bouquets.belongsToMany(db.fleurs, {
-  through: "bouquet_fleurs",
-  as: "fleurs",
-  foreignKey: "bouquetId"
-});
-
-db.fleurs.belongsToMany(db.bouquets, {
-  through: "bouquet_fleurs",
-  as: "bouquets",
-  foreignKey: "fleurId"
-});
-
-// Access the junction table to add quantity field
-const BouquetFleur = sequelize.models.bouquet_fleurs;
-BouquetFleur.removeAttribute('id'); // Remove default id
-sequelize.models.bouquet_fleurs = sequelize.define('bouquet_fleurs', {
-  bouquetId: {
-    type: Sequelize.INTEGER,
-    references: {
-      model: db.bouquets,
-      key: 'id'
-    },
-    primaryKey: true
-  },
-  fleurId: {
-    type: Sequelize.INTEGER,
-    references: {
-      model: db.fleurs,
-      key: 'id'
-    },
-    primaryKey: true
-  },
+// Junction table for Bouquet-Fleur with quantity
+db.BouquetFleur = sequelize.define('bouquet_fleurs', {
   quantite: {
     type: Sequelize.INTEGER,
     allowNull: false,
@@ -71,22 +38,48 @@ sequelize.models.bouquet_fleurs = sequelize.define('bouquet_fleurs', {
   timestamps: false
 });
 
+// Junction table for Transaction-Bouquet with quantity
+db.TransactionBouquet = sequelize.define('transaction_bouquets', {
+  quantite: {
+    type: Sequelize.INTEGER,
+    allowNull: false,
+    defaultValue: 1
+  }
+}, {
+  timestamps: false
+});
+
+// Define associations
+
+// 1. Bouquet-Fleur: Many-to-Many (with quantity)
+db.bouquets.belongsToMany(db.fleurs, {
+  through: db.BouquetFleur,
+  as: "fleurs",
+  foreignKey: "bouquetId"
+});
+
+db.fleurs.belongsToMany(db.bouquets, {
+  through: db.BouquetFleur,
+  as: "bouquets",
+  foreignKey: "fleurId"
+});
+
 // 2. User-Bouquet Likes: Many-to-Many
-// A user can like many bouquets, and a bouquet can be liked by many users
 db.users.belongsToMany(db.bouquets, {
   through: "user_likes",
   as: "likedBouquets",
-  foreignKey: "userId"
+  foreignKey: "userId",
+  timestamps: false
 });
 
 db.bouquets.belongsToMany(db.users, {
   through: "user_likes",
   as: "likedByUsers",
-  foreignKey: "bouquetId"
+  foreignKey: "bouquetId",
+  timestamps: false
 });
 
-// 3. Transactions (User purchases Bouquets)
-// Create Transaction model
+// 3. Transactions
 db.transactions = sequelize.define("transaction", {
   dateTransaction: {
     type: Sequelize.DATE,
@@ -109,28 +102,17 @@ db.transactions.belongsTo(db.users, {
   as: "user"
 });
 
-// Transaction-Bouquet: Many-to-Many (with quantity)
+// Transaction-Bouquet: Many-to-Many
 db.transactions.belongsToMany(db.bouquets, {
-  through: "transaction_bouquets",
+  through: db.TransactionBouquet,
   as: "bouquets",
   foreignKey: "transactionId"
 });
 
 db.bouquets.belongsToMany(db.transactions, {
-  through: "transaction_bouquets",
+  through: db.TransactionBouquet,
   as: "transactions",
   foreignKey: "bouquetId"
-});
-
-// Add quantity to transaction_bouquets junction table
-const TransactionBouquet = sequelize.define('transaction_bouquets', {
-  quantite: {
-    type: Sequelize.INTEGER,
-    allowNull: false,
-    defaultValue: 1
-  }
-}, {
-  timestamps: false
 });
 
 module.exports = db;
