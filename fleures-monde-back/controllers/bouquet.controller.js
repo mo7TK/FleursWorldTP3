@@ -168,17 +168,28 @@ exports.deleteAll = async (req, res) => {
 // Like a Bouquet
 exports.like = async (req, res) => {
   try {
-    const bouquetId = req.params.id || req.query.id || req.body.bouquetId;
+    console.log("Like request received:", {
+      params: req.params,
+      body: req.body,
+      query: req.query
+    });
+
+    const bouquetId = req.params.id;
     const userId = req.body.userId || 1; // Default user for testing
+
+    if (!bouquetId) {
+      return res.status(400).send({
+        message: "ID du bouquet manquant"
+      });
+    }
 
     const bouquet = await Bouquet.findByPk(bouquetId);
     const user = await User.findByPk(userId);
 
     if (!bouquet || !user) {
-      res.status(404).send({
+      return res.status(404).send({
         message: "Bouquet ou User non trouvé."
       });
-      return;
     }
 
     // Check if user already liked this bouquet
@@ -206,8 +217,14 @@ exports.like = async (req, res) => {
       }]
     });
     
+    console.log("Like processed successfully:", {
+      bouquetId,
+      totalLikes: updatedBouquet.totalLikes
+    });
+    
     res.send(updatedBouquet);
   } catch (err) {
+    console.error("Error in like controller:", err);
     res.status(500).send({
       message: err.message || "Erreur lors du like."
     });

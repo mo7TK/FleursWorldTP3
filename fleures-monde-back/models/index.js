@@ -64,19 +64,23 @@ db.fleurs.belongsToMany(db.bouquets, {
   foreignKey: "fleurId"
 });
 
-// 2. User-Bouquet Likes: Many-to-Many
+// 2. User-Bouquet Likes: Many-to-Many (CORRECTION ICI)
 db.users.belongsToMany(db.bouquets, {
-  through: "user_likes",
+  through: {
+    model: "user_likes",
+    timestamps: false  // Pas de createdAt/updatedAt
+  },
   as: "likedBouquets",
-  foreignKey: "userId",
-  timestamps: false
+  foreignKey: "userId"
 });
 
 db.bouquets.belongsToMany(db.users, {
-  through: "user_likes",
+  through: {
+    model: "user_likes",
+    timestamps: false  // Pas de createdAt/updatedAt
+  },
   as: "likedByUsers",
-  foreignKey: "bouquetId",
-  timestamps: false
+  foreignKey: "bouquetId"
 });
 
 // 3. Transactions
