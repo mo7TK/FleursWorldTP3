@@ -9,6 +9,7 @@ import Home from "./pages/Home";
 import Bouquets from "./pages/Bouquets";
 import Fleurs from "./pages/Fleurs";
 import MonCompte from "./pages/MonCompte";
+import Backoffice from "./pages/Backoffice";
 
 function App() {
   const mesBouquets = [
@@ -35,12 +36,13 @@ function App() {
     }
   ];
 
-  const menuItems = [
-    { url: "/home", label: "Home" },
-    { url: "/bouquets", label: "Bouquets" },
-    { url: "/fleurs", label: "Fleurs" },
-    { url: "/moncompte", label: "Mon Compte" },
-  ];
+const menuItems = [
+  { url: "/home", label: "Home" },
+  { url: "/bouquets", label: "Bouquets" },
+  { url: "/fleurs", label: "Fleurs" },
+  { url: "/backoffice", label: "Back office" },  
+  //{ url: "/moncompte", label: "Mon Compte" },
+];
 
   return (
     <Router>
@@ -53,6 +55,7 @@ function App() {
           <Route path="/bouquets" element={<Bouquets bouquets={mesBouquets} />} />
           <Route path="/fleurs" element={<Fleurs />} />
           <Route path="/moncompte" element={<MonCompte />} />
+          <Route path="/backoffice" element={<Backoffice />} />
         </Routes>
       </div>
     </Router>
