@@ -46,11 +46,19 @@ exports.create = async (req, res) => {
 exports.findAll = async (req, res) => {
   try {
     const data = await Bouquet.findAll({
-      include: [{
-        model: Fleur,
-        as: "fleurs",
-        through: { attributes: ['quantite'] }
-      }]
+      include: [
+        {
+          model: Fleur,
+          as: "fleurs",
+          through: { attributes: ['quantite'] }
+        },
+        {
+          model: User,
+          as: "likedByUsers",
+          attributes: ['id', 'nomComplet'],
+          through: { attributes: [] }
+        }
+      ]
     });
     res.send(data);
   } catch (err) {
@@ -65,11 +73,19 @@ exports.findOne = async (req, res) => {
   try {
     const id = req.params.id;
     const data = await Bouquet.findByPk(id, {
-      include: [{
-        model: Fleur,
-        as: "fleurs",
-        through: { attributes: ['quantite'] }
-      }]
+      include: [
+        {
+          model: Fleur,
+          as: "fleurs",
+          through: { attributes: ['quantite'] }
+        },
+        {
+          model: User,
+          as: "likedByUsers",
+          attributes: ['id', 'nomComplet'],
+          through: { attributes: [] }
+        }
+      ]
     });
 
     if (data) {
@@ -152,7 +168,7 @@ exports.deleteAll = async (req, res) => {
 // Like a Bouquet
 exports.like = async (req, res) => {
   try {
-    const bouquetId = req.query.id || req.body.bouquetId;
+    const bouquetId = req.params.id || req.query.id || req.body.bouquetId;
     const userId = req.body.userId || 1; // Default user for testing
 
     const bouquet = await Bouquet.findByPk(bouquetId);
@@ -179,10 +195,77 @@ exports.like = async (req, res) => {
     }
 
     await bouquet.save();
-    res.send(bouquet);
+    
+    // Return bouquet with liked users
+    const updatedBouquet = await Bouquet.findByPk(bouquetId, {
+      include: [{
+        model: User,
+        as: "likedByUsers",
+        attributes: ['id', 'nomComplet'],
+        through: { attributes: [] }
+      }]
+    });
+    
+    res.send(updatedBouquet);
   } catch (err) {
     res.status(500).send({
       message: err.message || "Erreur lors du like."
+    });
+  }
+};
+
+// Get likes count for a bouquet
+exports.getLikesCount = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const bouquet = await Bouquet.findByPk(id);
+    
+    if (!bouquet) {
+      res.status(404).send({
+        message: `Bouquet avec id=${id} non trouvé.`
+      });
+      return;
+    }
+    
+    res.send({
+      bouquetId: id,
+      totalLikes: bouquet.totalLikes
+    });
+  } catch (err) {
+    res.status(500).send({
+      message: err.message || "Erreur lors de la récupération des likes."
+    });
+  }
+};
+
+// Get users who liked a bouquet
+exports.getLikedByUsers = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const bouquet = await Bouquet.findByPk(id, {
+      include: [{
+        model: User,
+        as: "likedByUsers",
+        attributes: ['id', 'login', 'nomComplet'],
+        through: { attributes: [] }
+      }]
+    });
+    
+    if (!bouquet) {
+      res.status(404).send({
+        message: `Bouquet avec id=${id} non trouvé.`
+      });
+      return;
+    }
+    
+    res.send({
+      bouquetId: id,
+      bouquetNom: bouquet.nom,
+      likedByUsers: bouquet.likedByUsers
+    });
+  } catch (err) {
+    res.status(500).send({
+      message: err.message || "Erreur lors de la récupération des utilisateurs."
     });
   }
 };

@@ -1,14 +1,18 @@
-// src/components/Navbar.jsx
 import React from "react";
 import { Link } from "react-router-dom";
+import { isAuthenticated, whoIsAuthenticated } from "../utils/auth";
 
 function Navbar({ menuItems }) {
+  const authenticated = isAuthenticated();
+  const userName = whoIsAuthenticated();
+
   return (
     <nav className="navbar navbar-expand-lg navbar-light bg-danger">
       <div className="container">
-        <Link className="navbar-brand me-4" to="/home">Fleurs Monde</Link>
+        <Link className="navbar-brand me-4 text-white" to="/home">
+          Fleurs Monde
+        </Link>
         
-       
         <button 
           className="navbar-toggler" 
           type="button" 
@@ -25,9 +29,18 @@ function Navbar({ menuItems }) {
           <ul className="navbar-nav ms-auto mb-2 mb-lg-0">
             {menuItems.map((item, index) => (
               <li className="nav-item" key={index}>
-                <Link className="nav-link" to={item.url}>{item.label}</Link>
+                <Link className="nav-link text-white" to={item.url}>
+                  {item.label}
+                </Link>
               </li>
             ))}
+            
+            {/* Menu Mon Compte - affiche le nom complet si authentifié */}
+            <li className="nav-item">
+              <Link className="nav-link text-white" to="/moncompte">
+                {userName}
+              </Link>
+            </li>
           </ul>
         </div>
       </div>

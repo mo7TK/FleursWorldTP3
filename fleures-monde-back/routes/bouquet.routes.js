@@ -18,10 +18,16 @@ module.exports = app => {
   router.delete("/:id", bouquets.delete);
 
   // Delete all Bouquets
-  router.delete("/", bouquets.deleteAll);
+  // router.delete("/", bouquets.deleteAll);
 
-  // Like a Bouquet
-  router.post("/like", bouquets.like);
+  // Like/Unlike a Bouquet
+  router.post("/:id/like", bouquets.like);
+
+  // Get likes count for a bouquet
+  router.get("/:id/likes", bouquets.getLikesCount);
+
+  // Get users who liked a bouquet
+  router.get("/:id/liked-by", bouquets.getLikedByUsers);
 
   app.use('/api/bouquets', router);
 };
