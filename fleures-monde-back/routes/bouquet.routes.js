@@ -1,6 +1,10 @@
 module.exports = app => {
   const bouquets = require("../controllers/bouquet.controller.js");
+  const { verifyToken, requireAuth } = require("../middleware/auth.middleware.js");
   var router = require("express").Router();
+
+  // Appliquer le middleware verifyToken à toutes les routes
+  router.use(verifyToken);
 
   // Create a new Bouquet
   router.post("/", bouquets.create);
@@ -8,8 +12,8 @@ module.exports = app => {
   // Retrieve all Bouquets
   router.get("/", bouquets.findAll);
 
-  // Like/Unlike a Bouquet (mettre avant /:id pour éviter les conflits)
-  router.post("/:id/like", bouquets.like);
+  // Like/Unlike a Bouquet (nécessite authentification)
+  router.post("/:id/like", requireAuth, bouquets.like);
 
   // Get likes count for a bouquet
   router.get("/:id/likes", bouquets.getLikesCount);

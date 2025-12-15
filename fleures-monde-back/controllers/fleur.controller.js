@@ -30,8 +30,22 @@ exports.create = async (req, res) => {
 // Retrieve all Fleurs from the database
 exports.findAll = async (req, res) => {
   try {
+    const isAuthenticated = req.user != null;
+
     const data = await Fleur.findAll();
-    res.send(data);
+    
+    // Si non authentifié, cacher les prix
+    const sanitizedData = data.map(fleur => {
+      const fleurData = fleur.toJSON();
+      
+      if (!isAuthenticated) {
+        delete fleurData.prixUnitaire;
+      }
+      
+      return fleurData;
+    });
+
+    res.send(sanitizedData);
   } catch (err) {
     res.status(500).send({
       message: err.message || "Erreur lors de la récupération des Fleurs."
@@ -43,10 +57,18 @@ exports.findAll = async (req, res) => {
 exports.findOne = async (req, res) => {
   try {
     const id = req.params.id;
+    const isAuthenticated = req.user != null;
+
     const data = await Fleur.findByPk(id);
 
     if (data) {
-      res.send(data);
+      const fleurData = data.toJSON();
+      
+      if (!isAuthenticated) {
+        delete fleurData.prixUnitaire;
+      }
+      
+      res.send(fleurData);
     } else {
       res.status(404).send({
         message: `Fleur avec id=${id} non trouvée.`

@@ -1,10 +1,18 @@
 import React from "react";
-import { Link } from "react-router-dom";
-import { isAuthenticated, whoIsAuthenticated } from "../utils/auth";
+import { Link, useNavigate } from "react-router-dom";
+import { useSelector, useDispatch } from "react-redux";
+import { logout } from "../services/authSlice";
+import CartDropdown from "./CartDropdown";
 
 function Navbar({ menuItems }) {
-  const authenticated = isAuthenticated();
-  const userName = whoIsAuthenticated();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { isAuthenticated, user } = useSelector((state) => state.auth);
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate("/");
+  };
 
   return (
     <nav className="navbar navbar-expand-lg navbar-light bg-danger">
@@ -35,12 +43,46 @@ function Navbar({ menuItems }) {
               </li>
             ))}
             
-            {/* Menu Mon Compte - affiche le nom complet si authentifié */}
-            <li className="nav-item">
-              <Link className="nav-link text-white" to="/moncompte">
-                {userName}
-              </Link>
-            </li>
+            {/* Dropdown Panier */}
+            <CartDropdown />
+            
+            {/* Menu Mon Compte avec dropdown si authentifié */}
+            {isAuthenticated ? (
+              <li className="nav-item dropdown">
+                <a
+                  className="nav-link dropdown-toggle text-white"
+                  href="#"
+                  id="navbarDropdown"
+                  role="button"
+                  data-bs-toggle="dropdown"
+                  aria-expanded="false"
+                >
+                  {user?.nomComplet}
+                </a>
+                <ul className="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                  <li>
+                    <Link className="dropdown-item" to="/moncompte">
+                      Mon Profil
+                    </Link>
+                  </li>
+                  <li><hr className="dropdown-divider" /></li>
+                  <li>
+                    <button 
+                      className="dropdown-item" 
+                      onClick={handleLogout}
+                    >
+                      Déconnexion
+                    </button>
+                  </li>
+                </ul>
+              </li>
+            ) : (
+              <li className="nav-item">
+                <Link className="nav-link text-white" to="/login">
+                  Mon Compte
+                </Link>
+              </li>
+            )}
           </ul>
         </div>
       </div>

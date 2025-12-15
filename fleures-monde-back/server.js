@@ -51,9 +51,11 @@ db.sequelize
   });
 
 // Routes
+require("./routes/user.routes")(app);      // Routes d'authentification
 require("./routes/bouquet.routes")(app);
 require("./routes/fleur.routes")(app);
 require("./routes/backoffice.routes")(app);
+
 // Simple test route
 app.get("/", (req, res) => {
   res.json({ message: "Bienvenue sur l'API Fleurs Monde!" });

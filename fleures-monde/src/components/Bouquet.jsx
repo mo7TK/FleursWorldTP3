@@ -1,9 +1,13 @@
 import React, { useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
 import { isAuthenticated } from "../utils/auth";
+import { addToCart } from "../services/cartSlice";
 
-function Bouquet({ bouquet, onLike }) {
+function Bouquet({ bouquet, onLike, onDelete, onEdit }) {
   const authenticated = isAuthenticated();
   const [showLikedUsers, setShowLikedUsers] = useState(false);
+  const dispatch = useDispatch();
+  const { isAuthenticated: isAuth } = useSelector((state) => state.auth);
 
   const handleLikeClick = () => {
     if (authenticated) {
@@ -15,8 +19,40 @@ function Bouquet({ bouquet, onLike }) {
     setShowLikedUsers(!showLikedUsers);
   };
 
+  const handleAddToCart = () => {
+    if (!isAuth) {
+      alert("Vous devez être connecté pour ajouter au panier");
+      return;
+    }
+    if (!bouquet.prix) {
+      alert("Prix non disponible");
+      return;
+    }
+    dispatch(addToCart(bouquet));
+  };
+
   return (
-    <div className="card h-100">
+    <div className="card h-100 position-relative">
+      {/* Boutons Modifier et Supprimer en haut à droite */}
+      {authenticated && (
+        <div className="position-absolute top-0 end-0 m-2" style={{ zIndex: 10 }}>
+          <button
+            className="btn btn-sm btn-warning me-1"
+            onClick={() => onEdit(bouquet)}
+            title="Modifier"
+          >
+            ✏️
+          </button>
+          <button
+            className="btn btn-sm btn-danger"
+            onClick={() => onDelete(bouquet.id)}
+            title="Supprimer"
+          >
+            🗑️
+          </button>
+        </div>
+      )}
+
       <img 
         src={bouquet.image} 
         className="card-img-top"
@@ -35,7 +71,7 @@ function Bouquet({ bouquet, onLike }) {
       </div>
 
       <div className="card-footer">
-        <div className="d-flex justify-content-between align-items-center">
+        <div className="d-flex justify-content-between align-items-center mb-2">
           <button 
             className={`btn ${authenticated ? 'btn-danger' : 'btn-secondary'}`}
             onClick={handleLikeClick}
@@ -55,6 +91,17 @@ function Bouquet({ bouquet, onLike }) {
             {bouquet.totalLikes || bouquet.likes || 0} Likes
           </span>
         </div>
+
+        {/* Bouton Ajouter au panier */}
+        {bouquet.prix && (
+          <button
+            className="btn btn-success w-100"
+            onClick={handleAddToCart}
+            disabled={!isAuth}
+          >
+            🛒 Ajouter au panier
+          </button>
+        )}
 
         {/* Liste des utilisateurs qui ont liké */}
         {showLikedUsers && (

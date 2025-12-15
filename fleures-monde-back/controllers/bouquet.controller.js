@@ -45,6 +45,8 @@ exports.create = async (req, res) => {
 // Retrieve all Bouquets from the database
 exports.findAll = async (req, res) => {
   try {
+    const isAuthenticated = req.user != null;
+
     const data = await Bouquet.findAll({
       include: [
         {
@@ -60,7 +62,32 @@ exports.findAll = async (req, res) => {
         }
       ]
     });
-    res.send(data);
+
+    // Si non authentifié, cacher les prix et les likes
+    const sanitizedData = data.map(bouquet => {
+      const bouquetData = bouquet.toJSON();
+      
+      if (!isAuthenticated) {
+        // Cacher le prix du bouquet
+        delete bouquetData.prix;
+        // Cacher le nombre de likes
+        delete bouquetData.totalLikes;
+        delete bouquetData.likedByUsers;
+        
+        // Cacher les prix des fleurs
+        if (bouquetData.fleurs) {
+          bouquetData.fleurs = bouquetData.fleurs.map(fleur => {
+            const fleurData = { ...fleur };
+            delete fleurData.prixUnitaire;
+            return fleurData;
+          });
+        }
+      }
+      
+      return bouquetData;
+    });
+
+    res.send(sanitizedData);
   } catch (err) {
     res.status(500).send({
       message: err.message || "Erreur lors de la récupération des Bouquets."
@@ -72,6 +99,8 @@ exports.findAll = async (req, res) => {
 exports.findOne = async (req, res) => {
   try {
     const id = req.params.id;
+    const isAuthenticated = req.user != null;
+
     const data = await Bouquet.findByPk(id, {
       include: [
         {
@@ -89,7 +118,23 @@ exports.findOne = async (req, res) => {
     });
 
     if (data) {
-      res.send(data);
+      const bouquetData = data.toJSON();
+      
+      if (!isAuthenticated) {
+        delete bouquetData.prix;
+        delete bouquetData.totalLikes;
+        delete bouquetData.likedByUsers;
+        
+        if (bouquetData.fleurs) {
+          bouquetData.fleurs = bouquetData.fleurs.map(fleur => {
+            const fleurData = { ...fleur };
+            delete fleurData.prixUnitaire;
+            return fleurData;
+          });
+        }
+      }
+      
+      res.send(bouquetData);
     } else {
       res.status(404).send({
         message: `Bouquet avec id=${id} non trouvé.`
@@ -168,14 +213,15 @@ exports.deleteAll = async (req, res) => {
 // Like a Bouquet
 exports.like = async (req, res) => {
   try {
-    console.log("Like request received:", {
-      params: req.params,
-      body: req.body,
-      query: req.query
-    });
+    // Vérifier l'authentification
+    if (!req.user) {
+      return res.status(401).send({
+        message: "Vous devez être authentifié pour liker un bouquet"
+      });
+    }
 
     const bouquetId = req.params.id;
-    const userId = req.body.userId || 1; // Default user for testing
+    const userId = req.user.id; // Utiliser l'ID de l'utilisateur authentifié
 
     if (!bouquetId) {
       return res.status(400).send({
@@ -215,11 +261,6 @@ exports.like = async (req, res) => {
         attributes: ['id', 'nomComplet'],
         through: { attributes: [] }
       }]
-    });
-    
-    console.log("Like processed successfully:", {
-      bouquetId,
-      totalLikes: updatedBouquet.totalLikes
     });
     
     res.send(updatedBouquet);

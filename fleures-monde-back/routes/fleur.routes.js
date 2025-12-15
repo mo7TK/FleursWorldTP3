@@ -1,6 +1,10 @@
 module.exports = app => {
   const fleurs = require("../controllers/fleur.controller.js");
+  const { verifyToken } = require("../middleware/auth.middleware.js");
   var router = require("express").Router();
+
+  // Appliquer le middleware verifyToken à toutes les routes
+  router.use(verifyToken);
 
   // Create a new Fleur
   router.post("/", fleurs.create);

@@ -1,18 +1,20 @@
-// Fonctions d'authentification (temporaires pour l'exercice 2)
-// Ces fonctions seront modifiées dans l'exercice 3 pour utiliser Redux
-
-// POUR TESTER : Changez true en false pour voir le bouton like grisé
-const IS_AUTHENTICATED = false;
+// Fonctions d'authentification utilisant Redux (Exercice 3)
+import { store } from "../store";
 
 export function isAuthenticated() {
-  // Pour le moment, retourne la valeur de IS_AUTHENTICATED (sera modifié dans l'exercice 3)
-  return IS_AUTHENTICATED;
+  const state = store.getState();
+  return state.auth.isAuthenticated;
 }
 
 export function whoIsAuthenticated() {
-  // Pour le moment, retourne "Mon Compte" ou le nom complet si authentifié (sera modifié dans l'exercice 3)
-  if (IS_AUTHENTICATED) {
-    return "Alice Dupont"; // Nom d'exemple pour tester
+  const state = store.getState();
+  if (state.auth.isAuthenticated && state.auth.user) {
+    return state.auth.user.nomComplet;
   }
   return "Mon Compte";
+}
+
+export function getToken() {
+  const state = store.getState();
+  return state.auth.token;
 }

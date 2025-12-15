@@ -1,24 +1,20 @@
 import React, { useEffect, useState } from "react";
-import { config } from "../config/config";
-
-const API_URL = config.apiBaseUrl;
+import { useSelector } from "react-redux";
+import { fetchData } from "../comm/myFetch";
 
 function Fleurs() {
   const [fleurs, setFleurs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { isAuthenticated } = useSelector((state) => state.auth);
 
   useEffect(() => {
     loadFleurs();
-  }, []);
+  }, [isAuthenticated]); // Recharger si l'authentification change
 
   const loadFleurs = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/fleurs`);
-      if (!response.ok) {
-        throw new Error('Erreur lors du chargement des fleurs');
-      }
-      const data = await response.json();
+      const data = await fetchData("/api/fleurs");
       setFleurs(data);
       setError(null);
     } catch (err) {
@@ -50,6 +46,13 @@ function Fleurs() {
   return (
     <div>
       <h1 className="mb-4">Nos Fleurs</h1>
+
+      {!isAuthenticated && (
+        <div className="alert alert-warning">
+          <strong>Note :</strong> Connectez-vous pour voir les prix des fleurs !
+        </div>
+      )}
+
       {fleurs.length === 0 ? (
         <div className="alert alert-info">
           Aucune fleur disponible pour le moment.
@@ -62,9 +65,16 @@ function Fleurs() {
                 <div className="card-body">
                   <h5 className="card-title">{fleur.nom}</h5>
                   <p className="card-text">{fleur.description}</p>
-                  <p className="card-text">
-                    <strong>Prix unitaire : {fleur.prixUnitaire} DZD</strong>
-                  </p>
+                  {fleur.prixUnitaire !== undefined && (
+                    <p className="card-text">
+                      <strong>Prix unitaire : {fleur.prixUnitaire} DZD</strong>
+                    </p>
+                  )}
+                  {fleur.prixUnitaire === undefined && (
+                    <p className="card-text text-muted">
+                      <em>Connectez-vous pour voir le prix</em>
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
