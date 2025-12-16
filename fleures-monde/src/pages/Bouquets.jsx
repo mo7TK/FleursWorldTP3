@@ -1,12 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import Bouquet from "../components/Bouquet";
+import EditBouquetModal from "../components/EditBouquetModal";
 import { fetchData, postData } from "../comm/myFetch";
+import { config } from "../config/config";
+
+const API_URL = config.apiBaseUrl;
 
 function Bouquets() {
   const [bouquets, setBouquets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [editingBouquet, setEditingBouquet] = useState(null);
+  const [showEditModal, setShowEditModal] = useState(false);
   const { isAuthenticated } = useSelector((state) => state.auth);
 
   // Charger les bouquets
@@ -24,7 +30,7 @@ function Bouquets() {
   };
 
   useEffect(() => {
-    loadBouquets(); // premier chargement
+    loadBouquets();
 
     // Polling toutes les 10 secondes
     const interval = setInterval(() => {
@@ -32,7 +38,7 @@ function Bouquets() {
     }, 10000);
 
     return () => clearInterval(interval);
-  }, [isAuthenticated]); // Recharger si l'authentification change
+  }, [isAuthenticated]);
 
   // Fonction like/unlike
   const handleLike = async (id) => {
@@ -43,7 +49,6 @@ function Bouquets() {
 
     try {
       await postData(`/api/bouquets/${id}/like`, {});
-      // Recharger les bouquets après like
       await loadBouquets();
     } catch (err) {
       console.error("Erreur lors du like:", err);
@@ -52,6 +57,64 @@ function Bouquets() {
       } else {
         setError(err.message);
       }
+    }
+  };
+
+  // Fonction supprimer
+  const handleDelete = async (id) => {
+    if (!window.confirm("Êtes-vous sûr de vouloir supprimer ce bouquet ?")) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`${API_URL}/api/bouquets/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+
+      if (response.ok) {
+        alert("Bouquet supprimé avec succès");
+        await loadBouquets();
+      } else {
+        throw new Error("Erreur lors de la suppression");
+      }
+    } catch (err) {
+      console.error("Erreur:", err);
+      alert("Erreur lors de la suppression: " + err.message);
+    }
+  };
+
+  // Fonction modifier
+  const handleEdit = (bouquet) => {
+    setEditingBouquet(bouquet);
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async (id, formData) => {
+    try {
+      const response = await fetch(`${API_URL}/api/bouquets/${id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${localStorage.getItem("token")}`
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (response.ok) {
+        alert("Bouquet modifié avec succès");
+        setShowEditModal(false);
+        setEditingBouquet(null);
+        await loadBouquets();
+      } else {
+        throw new Error("Erreur lors de la modification");
+      }
+    } catch (err) {
+      console.error("Erreur:", err);
+      alert("Erreur lors de la modification: " + err.message);
     }
   };
 
@@ -91,11 +154,27 @@ function Bouquets() {
         <div className="row">
           {bouquets.map(b => (
             <div key={b.id} className="col-md-4 mb-4">
-              <Bouquet bouquet={b} onLike={handleLike} />
+              <Bouquet 
+                bouquet={b} 
+                onLike={handleLike}
+                onDelete={handleDelete}
+                onEdit={handleEdit}
+              />
             </div>
           ))}
         </div>
       )}
+
+      {/* Modal de modification */}
+      <EditBouquetModal
+        bouquet={editingBouquet}
+        show={showEditModal}
+        onClose={() => {
+          setShowEditModal(false);
+          setEditingBouquet(null);
+        }}
+        onSave={handleSaveEdit}
+      />
     </div>
   );
 }
